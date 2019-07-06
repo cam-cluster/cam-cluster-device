@@ -12,5 +12,5 @@ WORKDIR /usr/src/app
 COPY . ./
 
 # server.js will run when container starts up on the device
-#CMD ["python","-u","test_register.py" ]
-CMD ["python","-u","test_camera_stream.py" ]
+#CMD ["python","-u","test-scripts/test_register.py" ]
+CMD ["python","-u","test-scripts/test_camera_stream.py" ]
