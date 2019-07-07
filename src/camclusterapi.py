@@ -1,6 +1,7 @@
 """Sends and receives API calls from the Cam Cluster Server"""
 
 import json
+from requests import post
 
 class CamClusterApi( object ):
 
@@ -8,5 +9,11 @@ class CamClusterApi( object ):
 		self.serverUrl = serverUrl
 
 	def register( self, deviceInfo ):
-		# TODO: Send an API fetch call
-		print( 'info: ', json.dumps( deviceInfo.getInfo() ) )
+		url = self.serverUrl + '/api/cameras'
+		print( 'Registering via url: ', url )
+
+		r = post( url, data = deviceInfo.getInfo() )
+
+		# TODO: Add handling for response
+		print( 'Response: ', r.status_code, r.reason )
+		print( r.text )
