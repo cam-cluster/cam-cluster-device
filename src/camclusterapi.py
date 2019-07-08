@@ -15,5 +15,4 @@ class CamClusterApi( object ):
 		r = post( url, data = deviceInfo.getInfo() )
 
 		# TODO: Add handling for response
-		print( 'Response: ', r.status_code, r.reason )
-		print( r.text )
+		print( 'Response: ', r.status_code, r.reason, r.json() )

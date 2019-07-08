@@ -23,6 +23,7 @@ from deviceinfo import DeviceInfo
 
 serverUrl = environ[ 'SERVER_URL' ]
 deviceName = environ[ 'DEVICE_NAME' ]
+registerInterval = int( environ[ 'REGISTER_INTERVAL' ] )
 
 print( 'Starting up "', deviceName, '"...' )
 
@@ -31,4 +32,4 @@ camClusterApi = CamClusterApi( serverUrl )
 
 while True:
 	camClusterApi.register( deviceInfo )
-	time.sleep( 60 );
+	time.sleep( registerInterval );
