@@ -15,67 +15,36 @@ __maintainer__ = "Kevin Killingsworth"
 __email__ = "kk@redfenix.com"
 __status__ = "Pre-alpha"
 
-from http import server
 from os import environ
-import socketserver
 import time
 
 from camclusterapi import CamClusterApi
 from deviceinfo import DeviceInfo
+from cam_http_server import CamHTTPServer
 
-serverUrl = environ[ 'SERVER_URL' ]
-deviceName = environ[ 'DEVICE_NAME' ]
-registerInterval = int( environ[ 'REGISTER_INTERVAL' ] )
-camServerPort = int( environ[ 'CAM_SERVER_PORT' ] )
+server_url = environ[ 'SERVER_URL' ]
+device_name = environ[ 'DEVICE_NAME' ]
+register_interval = int( environ[ 'REGISTER_INTERVAL' ] )
+cam_server_port = int( environ[ 'CAM_SERVER_PORT' ] )
 
-print( 'Starting up "', deviceName, '"...' )
+print( 'Starting up "', device_name, '"...' )
 
-deviceInfo = DeviceInfo( deviceName )
+device_info = DeviceInfo( device_name )
 
 class CamClusterClient( object ):
-	def __init__( self, registerInterval ):
-		self.registerInterval = registerInterval
-		self.camClusterApi = CamClusterApi( serverUrl )
-		self.lastRegister = 0
+	def __init__( self, register_interval ):
+		self.register_interval = register_interval
+		self.api = CamClusterApi( server_url )
+		self.last_register = 0
 		self.update()
 
 	def update( self ):
 		now = time.time()
-		if ( self.lastRegister + self.registerInterval <= now ):
-			self.camClusterApi.register( deviceInfo )
-			self.lastRegister = now
+		if ( self.last_register + self.register_interval <= now ):
+			self.api.register( device_info )
+			self.last_register = now
 
-client = CamClusterClient( registerInterval )
+client = CamClusterClient( register_interval )
 
-class HTTPHandler( server.BaseHTTPRequestHandler ):
-	def do_GET( self ):
-		if self.path == '/':
-			self.send_response( 301 )
-			self.send_header( 'Location', '/index.html' )
-			self.end_headers()
-		elif self.path == '/index.html':
-			text = 'CamServer test page'
-			content = text.encode( 'utf-8' )
-			self.send_response( 200 )
-			self.send_header( 'Content-Type', 'text/html' )
-			self.send_header( 'Content-Length', len( content ) )
-			self.end_headers()
-			self.wfile.write( content )
-		else:
-			self.send_error( 404 )
-			self.end_headers()
-
-class CamServer( socketserver.ThreadingMixIn, server.HTTPServer ):
-	allow_reuse_address = True
-	daemon_threads = True
-
-	def service_actions( self ):
-		client.update()
-
-address = ( '', camServerPort )
-server = CamServer( address, HTTPHandler )
+server = CamHTTPServer( cam_server_port, device_info, client )
 server.serve_forever()
-
-#while True:
-#	camClusterApi.register( deviceInfo )
-#	#time.sleep( registerInterval );
