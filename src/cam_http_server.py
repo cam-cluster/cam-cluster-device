@@ -2,7 +2,6 @@
 
 from http import server
 import json
-import logging
 import socketserver
 
 def error_not_found( handler ):
@@ -19,6 +18,7 @@ def serve_info_page( handler, info, output ):
 	text += '<table>\r\n'
 	text += '  <tr><th>mac:</th><td>' + info[ 'mac' ] + '</td></tr>\r\n'
 	text += '  <tr><th>ip:</th><td>' + info[ 'ip' ] + '</td></tr>\r\n'
+	text += '  <tr><th>status:</th><td>' + info[ 'status' ] + '</td></tr>\r\n'
 	text += '  <tr>\r\n'
 	text += '    <th>preview:</th>\r\n'
 	text += '    <td><img src="stream.mjpg" width="640" height="480"</td>\r\n'
@@ -51,7 +51,7 @@ def serve_camera_stream( handler, info, output ):
 			handler.wfile.write( frame )
 			handler.wfile.write( b'\r\n' )
 	except Exception as e:
-		logging.warning(
+		print(
 			'Removed streaming client %s: %s',
 			handler.client_address, str( e )
 		)

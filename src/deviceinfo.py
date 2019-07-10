@@ -3,17 +3,27 @@
 from getmac import get_mac_address
 import socket
 
+DEVICE_STATUS = {
+	'idle': 'Idle',
+	'preview': 'Preview Mode',
+	'preparing': 'Preparing to record...',
+	'recording': 'Recording',
+	'uploading': 'Uploading',
+}
+
 class DeviceInfo( object ):
 
 	def __init__( self, deviceName ):
 		self.mac = get_mac_address()
 		self.deviceName = deviceName
+		self.status = DEVICE_STATUS[ 'idle' ]
 
 	def getInfo( self ):
 		return {
 			'mac': self.mac,
 			'name': self.deviceName,
 			'ip': self.getIp(),
+			'status': self.status,
 		}
 
 	def getIp( self ):
