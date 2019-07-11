@@ -15,15 +15,14 @@ __maintainer__ = "Kevin Killingsworth"
 __email__ = "kk@redfenix.com"
 __status__ = "Pre-alpha"
 
-import io
 from os import environ
 import picamera
-from threading import Condition
 import time
 
 from camclusterapi import CamClusterApi
 from deviceinfo import DeviceInfo
 from cam_http_server import CamHTTPServer
+from preview_stream import StreamingOutput
 
 server_url = environ[ 'SERVER_URL' ]
 device_name = environ[ 'DEVICE_NAME' ]
@@ -47,31 +46,16 @@ class CamClusterClient( object ):
 			self.api.register( device_info )
 			self.last_register = now
 
-# TODO: Move this to a proper location
-class StreamingOutput( object ):
-	def __init__( self ):
-		self.frame = None
-		self.buffer = io.BytesIO()
-		self.condition = Condition()
+with picamera.PiCamera() as camera:
+	stream_out = StreamingOutput()
 
-	def write( self, buf ):
-		if buf.startswith( b'\xff\xd8'):
-			# New frame, copy the existing buffer's content and notify all
-			# clients it's available
-			self.buffer.truncate()
-			with self.condition:
-				self.frame = self.buffer.getvalue()
-				self.condition.notify_all()
-			self.buffer.seek(0)
-		return self.buffer.write( buf )
-
-with picamera.PiCamera( resolution='640x480', framerate=24 ) as camera:
-	output = StreamingOutput()
-	camera.start_recording( output, format='mjpeg' )
+	camera.resolution = (640, 480)
+	camera.framerate = 24
+	camera.start_recording( stream_out, format='mjpeg' )
 
 	try:
 		client = CamClusterClient( register_interval )
-		server = CamHTTPServer( cam_server_port, device_info, client, output )
+		server = CamHTTPServer( cam_server_port, device_info, client, stream_out )
 		server.serve_forever()
 	finally:
 		camera.stop_recording()
