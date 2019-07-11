@@ -50,7 +50,6 @@ with picamera.PiCamera() as camera:
 	server = CamHTTPServer( cam_server_port, device_info, client, camera )
 
 	try:
-		server.start_preview()
 		server.serve_forever()
 	finally:
 		server.stop_preview()

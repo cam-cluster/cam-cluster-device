@@ -4,6 +4,7 @@ from http import server
 import json
 import socketserver
 from preview_stream import StreamingOutput, serve_preview_stream
+from deviceinfo import DEVICE_STATUS
 
 def error_not_found( handler ):
 	handler.send_error( 404 )
@@ -19,7 +20,7 @@ def serve_info_page( handler, info, stream_out ):
 	text += '<table>\r\n'
 	text += '  <tr><th>mac:</th><td>' + info[ 'mac' ] + '</td></tr>\r\n'
 	text += '  <tr><th>ip:</th><td>' + info[ 'ip' ] + '</td></tr>\r\n'
-	text += '  <tr><th>status:</th><td>' + info[ 'status' ] + '</td></tr>\r\n'
+	text += '  <tr><th>status:</th><td>' + DEVICE_STATUS[ info[ 'status' ] ] + '</td></tr>\r\n'
 
 	if stream_out:
 		text += '  <tr>\r\n'
@@ -44,6 +45,10 @@ get_paths = {
 
 def create_handler( cam_http_server ):
 	class HTTPHandler( server.BaseHTTPRequestHandler ):
+		# TODO: The next line is temporary until the server
+		#       can update device statuses
+		cam_http_server.update_status( 'preview' )
+
 		def do_GET( self ):
 			if ( self.path in get_paths ):
 				path = get_paths[ self.path ]
@@ -63,10 +68,31 @@ class CamHTTPServer( socketserver.ThreadingMixIn, server.HTTPServer ):
 		self.camera = camera
 		self.stream_out = None
 
+		self.exit_status = {
+			'preview': self.stop_preview,
+		}
+
+		self.enter_status = {
+			'preview': self.start_preview,
+		}
+
 		address = ( '', port )
 		super().__init__( address, create_handler( self ) )
 
+	def update_status( self, status ):
+		prev_status = self.device_info.status
+
+		if prev_status != status:
+			if ( prev_status in self.exit_status ):
+				self.exit_status[ prev_status ]()
+
+			if ( status in self.enter_status ):
+				self.enter_status[ status ]()
+
+			self.device_info.status = status
+
 	def start_preview( self ):
+		print( 'Starting preview mode' )
 		if self.stream_out:
 			# We already had a preview running, so stop it and restart
 			self.stop_preview()
@@ -78,6 +104,7 @@ class CamHTTPServer( socketserver.ThreadingMixIn, server.HTTPServer ):
 		self.camera.start_recording( self.stream_out, format='mjpeg' )
 
 	def stop_preview( self ):
+		print( 'Stopping preview mode' )
 		if self.stream_out:
 			self.stream_out = None
 			self.camera.stop_recording()

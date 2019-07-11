@@ -16,7 +16,7 @@ class DeviceInfo( object ):
 	def __init__( self, deviceName ):
 		self.mac = get_mac_address()
 		self.deviceName = deviceName
-		self.status = DEVICE_STATUS[ 'idle' ]
+		self.status = 'idle'
 
 	def getInfo( self ):
 		return {
