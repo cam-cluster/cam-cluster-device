@@ -3,7 +3,7 @@
 from http import server
 import json
 import socketserver
-from preview_stream import serve_preview_stream
+from preview_stream import StreamingOutput, serve_preview_stream
 
 def error_not_found( handler ):
 	handler.send_error( 404 )
@@ -42,13 +42,12 @@ get_paths = {
 	'/stream.mjpg': serve_preview_stream,
 }
 
-def create_handler( device_info, stream_out, get_paths ):
+def create_handler( cam_http_server ):
 	class HTTPHandler( server.BaseHTTPRequestHandler ):
-		dev_info = device_info
-
 		def do_GET( self ):
 			if ( self.path in get_paths ):
-				get_paths[ self.path ]( self, self.dev_info.getInfo(), stream_out )
+				path = get_paths[ self.path ]
+				path( self, cam_http_server.device_info.getInfo(), cam_http_server.stream_out )
 			else:
 				error_not_found( self )
 
@@ -58,11 +57,30 @@ class CamHTTPServer( socketserver.ThreadingMixIn, server.HTTPServer ):
 	allow_reuse_address = True
 	daemon_threads = True
 
-	def __init__( self, port, device_info, client, stream_out ):
+	def __init__( self, port, device_info, client, camera ):
+		self.device_info = device_info
 		self.client = client
+		self.camera = camera
+		self.stream_out = None
 
 		address = ( '', port )
-		super().__init__( address, create_handler( device_info, stream_out, get_paths ) )
+		super().__init__( address, create_handler( self ) )
+
+	def start_preview( self ):
+		if self.stream_out:
+			# We already had a preview running, so stop it and restart
+			self.stop_preview()
+
+		self.camera.resolution = (640, 480)
+		self.camera.framerate = 24
+
+		self.stream_out = StreamingOutput()
+		self.camera.start_recording( self.stream_out, format='mjpeg' )
+
+	def stop_preview( self ):
+		if self.stream_out:
+			self.stream_out = None
+			self.camera.stop_recording()
 
 	def service_actions( self ):
 		self.client.update()

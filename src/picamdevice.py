@@ -22,7 +22,6 @@ import time
 from camclusterapi import CamClusterApi
 from deviceinfo import DeviceInfo
 from cam_http_server import CamHTTPServer
-from preview_stream import StreamingOutput
 
 server_url = environ[ 'SERVER_URL' ]
 device_name = environ[ 'DEVICE_NAME' ]
@@ -47,15 +46,11 @@ class CamClusterClient( object ):
 			self.last_register = now
 
 with picamera.PiCamera() as camera:
-	stream_out = StreamingOutput()
-
-	camera.resolution = (640, 480)
-	camera.framerate = 24
-	camera.start_recording( stream_out, format='mjpeg' )
+	client = CamClusterClient( register_interval )
+	server = CamHTTPServer( cam_server_port, device_info, client, camera )
 
 	try:
-		client = CamClusterClient( register_interval )
-		server = CamHTTPServer( cam_server_port, device_info, client, stream_out )
+		server.start_preview()
 		server.serve_forever()
 	finally:
-		camera.stop_recording()
+		server.stop_preview()
