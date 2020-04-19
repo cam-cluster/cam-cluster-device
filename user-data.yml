@@ -25,25 +25,25 @@ locale: "en_US.UTF-8"
 # # Value of 'timezone' must exist in /usr/share/zoneinfo
 # timezone: "America/Los_Angeles"
 
-# # Update apt packages on first boot
-# package_update: true
-# package_upgrade: true
-# package_reboot_if_required: true
-package_upgrade: false
+# Update apt packages on first boot
+package_update: true
+package_upgrade: true
+package_reboot_if_required: true
 
 # Install any additional apt packages you need here
 packages:
- - ntp
+  - ntp
 
 # WiFi connect to HotSpot
 # - use `wpa_passphrase SSID PASSWORD` to encrypt the psk
 write_files:
+  - path: /etc/network/interfaces.d/wlan0
   - content: |
       allow-hotplug wlan0
       iface wlan0 inet dhcp
       wpa-conf /etc/wpa_supplicant/wpa_supplicant.conf
       iface default inet dhcp
-    path: /etc/network/interfaces.d/wlan0
+  - path: /etc/wpa_supplicant/wpa_supplicant.conf
   - content: |
       country=us
       ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
@@ -56,12 +56,19 @@ write_files:
       pairwise=CCMP
       auth_alg=OPEN
       }
-    path: /etc/wpa_supplicant/wpa_supplicant.conf
+  - path: "/etc/docker/daemon.json"
+    owner: "root:root"
+    content: |
+      {
+        "labels": [ "os=linux", "arch=arm64" ],
+        "experimental": true
+      }
 
 # These commands will be ran once on first boot only
 runcmd:
-  # Pickup the hostname changes
-  - 'systemctl restart avahi-daemon'
+  - [ systemctl, restart, avahi-daemon ]
+  - [ systemctl, restart, docker ]
+  - [ git, clone, https://github.com/cam-cluster/cam-cluster-device.git ]
 
   # Activate WiFi interface
-  - 'ifup wlan0'
+  - [ ifup, wlan0 ]
