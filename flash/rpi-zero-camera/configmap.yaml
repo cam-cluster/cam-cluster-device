@@ -1,0 +1,12 @@
+# Hypriot OS Configuration
+hypriotos:
+  version: v1.12.0
+
+# Raspberry Pi Configuration
+raspberrypi:
+  # config.txt file (for rpi device config)
+  config: "config.txt"
+
+# Cloud-init config
+cloudinit:
+  userdata: "user-data.yaml"
