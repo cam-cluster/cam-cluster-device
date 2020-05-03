@@ -16,6 +16,8 @@ users:
     plain_text_passwd: hypriot
     lock_passwd: false
     ssh_pwauth: true
+    ssh_authorized_keys:
+      - "<ssh_public_key>"
     chpasswd: { expire: false }
 
 # Set the locale of the system
@@ -60,8 +62,6 @@ write_files:
 
 # These commands will be ran once on first boot only
 runcmd:
-  # Pickup the hostname changes
-  - 'systemctl restart avahi-daemon'
-
-  # Activate WiFi interface
-  - 'ifup wlan0'
+  # Clone the device repo into opt
+  - 'cd /opt'
+  - 'git clone https://github.com/cam-cluster/cam-cluster-device.git'
